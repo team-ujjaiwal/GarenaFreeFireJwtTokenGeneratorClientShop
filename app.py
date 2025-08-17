@@ -84,22 +84,22 @@ def generate_jwt_token(uid: str, password: str):
     }
     
     with httpx.Client() as client:
-    resp = client.post(url, data=payload, headers=headers)
-    msg = json.loads(json_format.MessageToJson(
-        decode_protobuf(resp.content, FreeFire_pb2.LoginRes)
-    ))
-    
-    # Prepare response
-    response_data = {
-        "accountId": msg.get("accountId", ""),
-        "agoraEnvironment": msg.get("agoraEnvironment", "live"),
-        "ipRegion": msg.get("ipRegion", ""),
-        "lockRegion": msg.get("lockRegion", ""),
-        "notiRegion": msg.get("notiRegion", ""),
-        "serverUrl": msg.get("serverUrl", ""),
-        "token": f"Bearer {msg.get('token', '')}"
-    }
+        resp = client.post(url, data=payload, headers=headers)
+        msg = json.loads(json_format.MessageToJson(
+            decode_protobuf(resp.content, FreeFire_pb2.LoginRes)
+        ))
         
+        # Prepare response
+        response_data = {
+            "accountId": msg.get("accountId", ""),
+            "agoraEnvironment": msg.get("agoraEnvironment", "live"),
+            "ipRegion": msg.get("ipRegion", ""),
+            "lockRegion": msg.get("lockRegion", ""),
+            "notiRegion": msg.get("notiRegion", ""),
+            "serverUrl": msg.get("serverUrl", ""),
+            "token": f"Bearer {msg.get('token', '')}"
+        }
+
         return response_data
 
 # === Flask Routes ===
