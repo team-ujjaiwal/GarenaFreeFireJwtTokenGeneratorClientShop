@@ -1,0 +1,9 @@
+Flask
+httpx==0.27.0
+flask-cors
+cachetools
+requests==2.32.3
+pycryptodome==3.20.0
+protobuf==6.30.0
+google==3.0.0
+Werkzeug==2.0.3
