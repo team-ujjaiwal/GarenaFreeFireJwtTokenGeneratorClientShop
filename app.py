@@ -1,4 +1,3 @@
-import asyncio
 import time
 import httpx
 import json
@@ -34,11 +33,11 @@ def decode_protobuf(encoded_data: bytes, message_type: message.Message) -> messa
     instance.ParseFromString(encoded_data)
     return instance
 
-async def json_to_proto(json_data: str, proto_message: Message) -> bytes:
+def json_to_proto(json_data: str, proto_message: Message) -> bytes:
     json_format.ParseDict(json.loads(json_data), proto_message)
     return proto_message.SerializeToString()
 
-async def get_access_token(account: str):
+def get_access_token(account: str):
     url = "https://ffmconnect.live.gop.garenanow.com/oauth/guest/token/grant"
     payload = account + "&response_type=token&client_type=2&client_secret=2ee44819e9b4598845141067b281621874d0d5d7af9d8f7e00c1e54715b7d1e3&client_id=100067"
     headers = {
@@ -47,17 +46,17 @@ async def get_access_token(account: str):
         'Accept-Encoding': "gzip",
         'Content-Type': "application/x-www-form-urlencoded"
     }
-    async with httpx.AsyncClient() as client:
-        resp = await client.post(url, data=payload, headers=headers)
+    with httpx.Client() as client:
+        resp = client.post(url, data=payload, headers=headers)
         data = resp.json()
         return data.get("access_token", "0"), data.get("open_id", "0")
 
-async def generate_jwt_token(uid: str, password: str):
+def generate_jwt_token(uid: str, password: str):
     # Create account string from UID and password
     account = f"uid={uid}&password={password}"
     
     # Get access token and open_id
-    token_val, open_id = await get_access_token(account)
+    token_val, open_id = get_access_token(account)
     
     # Prepare login request
     body = json.dumps({
@@ -68,7 +67,7 @@ async def generate_jwt_token(uid: str, password: str):
     })
     
     # Convert to protobuf and encrypt
-    proto_bytes = await json_to_proto(body, FreeFire_pb2.LoginReq())
+    proto_bytes = json_to_proto(body, FreeFire_pb2.LoginReq())
     payload = aes_cbc_encrypt(MAIN_KEY, MAIN_IV, proto_bytes)
     
     # Send login request
@@ -84,8 +83,8 @@ async def generate_jwt_token(uid: str, password: str):
         'ReleaseVersion': RELEASEVERSION
     }
     
-    async with httpx.AsyncClient() as client:
-        resp = await client.post(url, data=payload, headers=headers)
+    with httpx.Client() as client:
+        resp = client.post(url, data=payload, headers=headers)
         msg = json.loads(json_format.MessageToJson(decode_protobuf(resp.content, FreeFire_pb2.LoginRes())))
         
         # Prepare response
@@ -103,7 +102,7 @@ async def generate_jwt_token(uid: str, password: str):
 
 # === Flask Routes ===
 @app.route('/token', methods=['GET'])
-async def get_jwt_token():
+def get_jwt_token():
     uid = request.args.get('uid')
     password = request.args.get('password')
     
@@ -111,7 +110,7 @@ async def get_jwt_token():
         return jsonify({"error": "Both uid and password parameters are required"}), 400
     
     try:
-        token_data = await generate_jwt_token(uid, password)
+        token_data = generate_jwt_token(uid, password)
         return jsonify(token_data), 200
     except Exception as e:
         return jsonify({"error": f"Failed to generate token: {str(e)}"}), 500
